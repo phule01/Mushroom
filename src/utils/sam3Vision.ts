@@ -17,7 +17,7 @@ export const SAM3_BORDER_COLORS = [
   '#00ffff', '#ff00ff', '#80ff00', '#0080ff', '#ff8000'
 ];
 
-export async function detectMushroomsInImage(img: HTMLImageElement, prompt: string, threshold: number): Promise<{detections: DetectionItem[]}> {
+export async function detectMushroomsInImage(_img: HTMLImageElement, prompt: string, threshold: number): Promise<{detections: DetectionItem[]}> {
   // MOCK: Giả lập gọi API tới HuggingFace Spaces hoặc backend SAM 3
   return new Promise((resolve) => {
     setTimeout(() => {
