@@ -12,3 +12,6 @@ runs/
 *.webp
 *.mp4
 .vscode/
+
+/sam3_repo/
+/app_sam3.py

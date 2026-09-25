@@ -17,107 +17,55 @@ export const SAM3_BORDER_COLORS = [
   '#00ffff', '#ff00ff', '#80ff00', '#0080ff', '#ff8000'
 ];
 
-export async function detectMushroomsInImage(_img: HTMLImageElement, prompt: string, threshold: number): Promise<{detections: DetectionItem[]}> {
-  // Vì đã gỡ bỏ Hugging Face backend, hệ thống tạm thời trả về mock data để tránh lỗi UI
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        detections: [
-          { id: 1, score: 0.95, box: [50, 50, 150, 150], label: prompt },
-          { id: 2, score: 0.88, box: [200, 100, 280, 220], label: prompt }
-        ].filter(d => d.score >= threshold) as DetectionItem[]
-      });
-    }, 1000);
-  });
-}
+import { Client } from "@gradio/client";
 
-export function renderSam3Visualization(
-  canvas: HTMLCanvasElement,
-  image: HTMLImageElement,
-  detections: DetectionItem[],
-  options: {
-    showMasks?: boolean;
-    showBoxes?: boolean;
-    showScores?: boolean;
-  } = {}
-) {
-  const { showMasks = true, showBoxes = true, showScores = true } = options;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+export async function detectMushroomsInImage(img: HTMLImageElement, prompt: string, threshold: number): Promise<{detections: DetectionItem[], outputImageUrl?: string}> {
+  try {
+    // Kết nối tới server Gradio API (được mount tại /api/)
+    const client = await Client.connect("http://127.0.0.1:7860/api/");
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error("Canvas context failed");
+    ctx.drawImage(img, 0, 0);
+    
+    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+    if (!blob) throw new Error("Image conversion failed");
 
-  const width = image.naturalWidth || image.width || 800;
-  const height = image.naturalHeight || image.height || 600;
-
-  canvas.width = width;
-  canvas.height = height;
-
-  // 1. Vẽ ảnh gốc
-  ctx.drawImage(image, 0, 0, width, height);
-
-  // 2. Vẽ mặt nạ với độ trong suốt (Alpha blend)
-  if (showMasks) {
-    detections.forEach((item, index) => {
-      const color = SAM3_COLORS[index % SAM3_COLORS.length];
-      const borderColor = SAM3_BORDER_COLORS[index % SAM3_BORDER_COLORS.length];
-      const [x1, y1, x2, y2] = item.box;
-      const bw = x2 - x1;
-      const bh = y2 - y1;
-
-      ctx.save();
-      ctx.fillStyle = color;
-      ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 2;
-
-      ctx.beginPath();
-      const rx = bw * 0.45;
-      const ry = bh * 0.42;
-      const cx = x1 + bw * 0.5;
-      const cy = y1 + bh * 0.45;
-      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      if (bh > bw * 1.1) {
-        ctx.beginPath();
-        const stemW = bw * 0.25;
-        const stemH = bh * 0.45;
-        ctx.roundRect(cx - stemW / 2, cy + ry * 0.4, stemW, stemH, [0, 0, 6, 6]);
-        ctx.fill();
-      }
-
-      ctx.restore();
+    // Gọi API tới Local Gradio server
+    const result = await client.predict("/predict", { 
+        image: blob, 
+        prompt: prompt, 
+        conf_threshold: threshold 
     });
+    
+    const resultData = result.data as any[];
+    let detections: DetectionItem[] = [];
+    let outputImageUrl: string | undefined = undefined;
+
+    if (resultData && resultData.length >= 3) {
+      if (resultData[0]) {
+        outputImageUrl = typeof resultData[0] === 'string' ? resultData[0] : (resultData[0].url || resultData[0].path);
+      }
+      
+      const jsonStr = resultData[2];
+      try {
+        const parsed = JSON.parse(jsonStr);
+        if (parsed && parsed.detections) {
+          detections = parsed.detections;
+        }
+      } catch (e) {
+        console.error("JSON parse error:", e);
+      }
+      return { detections, outputImageUrl };
+    }
+    
+    return { detections: [] };
+  } catch (error) {
+    console.error("Gradio API error:", error);
+    return { detections: [] };
   }
-
-  // 3. Vẽ Bounding box (viền đỏ) và điểm số (chữ lime green) chuẩn SAM 3
-  detections.forEach((item, index) => {
-    const [x1, y1, x2, y2] = item.box;
-
-    if (showBoxes) {
-      ctx.save();
-      ctx.strokeStyle = '#ef4444'; // Red outline
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-      ctx.restore();
-    }
-
-    if (showScores) {
-      ctx.save();
-      const labelText = `#${index + 1} ${item.score.toFixed(2)}`;
-      const fontSize = Math.max(14, Math.min(22, Math.floor((x2 - x1) * 0.12)));
-      ctx.font = `bold ${fontSize}px monospace, sans-serif`;
-
-      const textMetrics = ctx.measureText(labelText);
-      const textW = textMetrics.width + 8;
-      const textH = fontSize + 6;
-      const labelY = Math.max(textH, y1 - 4);
-
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.fillRect(x1, labelY - textH, textW, textH);
-
-      // Màu lime green trùng khớp với `fill="lime"` của Meta SAM 3
-      ctx.fillStyle = '#22c55e';
-      ctx.fillText(labelText, x1 + 4, labelY - 5);
-      ctx.restore();
-    }
-  });
 }
+

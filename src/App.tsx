@@ -3,15 +3,12 @@ import {
   Upload, 
   Search, 
   Download, 
-  Layers, 
-  Square, 
-  Tag, 
   Info,
   CheckCircle2,
   Sliders
 } from 'lucide-react';
 import { DetectionItem } from './types';
-import { detectMushroomsInImage, renderSam3Visualization } from './utils/sam3Vision';
+import { detectMushroomsInImage } from './utils/sam3Vision';
 
 export default function App() {
   const [prompt, setPrompt] = useState<string>('mushroom');
@@ -21,11 +18,6 @@ export default function App() {
   const [resultMessage, setResultMessage] = useState<string>('Vui lòng tải ảnh lên để bắt đầu phân tích.');
   const [detections, setDetections] = useState<DetectionItem[]>([]);
   const [count, setCount] = useState<number>(0);
-
-  // Layer display toggles
-  const [showMasks, setShowMasks] = useState<boolean>(true);
-  const [showBoxes, setShowBoxes] = useState<boolean>(true);
-  const [showScores, setShowScores] = useState<boolean>(true);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -58,15 +50,36 @@ export default function App() {
         setResultMessage(`Không tìm thấy nấm nào với ngưỡng Confidence ${threshold.toFixed(2)}.`);
       }
 
-      if (canvasRef.current) {
-        renderSam3Visualization(canvasRef.current, img, currentDetections, {
-          showMasks,
-          showBoxes,
-          showScores,
-        });
+      if (result.outputImageUrl && canvasRef.current) {
+        const resultImg = new Image();
+        resultImg.crossOrigin = 'anonymous';
+        resultImg.src = result.outputImageUrl;
+        resultImg.onload = () => {
+          if (canvasRef.current) {
+            const ctx = canvasRef.current.getContext('2d');
+            if (ctx) {
+              canvasRef.current.width = resultImg.naturalWidth || resultImg.width;
+              canvasRef.current.height = resultImg.naturalHeight || resultImg.height;
+              ctx.drawImage(resultImg, 0, 0);
+            }
+          }
+          setIsProcessing(false);
+        };
+        resultImg.onerror = () => {
+          setIsProcessing(false);
+          setResultMessage('Có lỗi khi tải ảnh kết quả.');
+        };
+      } else {
+        setIsProcessing(false);
+        if (canvasRef.current) {
+          const ctx = canvasRef.current.getContext('2d');
+          if (ctx) {
+            canvasRef.current.width = img.naturalWidth || img.width;
+            canvasRef.current.height = img.naturalHeight || img.height;
+            ctx.drawImage(img, 0, 0);
+          }
+        }
       }
-
-      setIsProcessing(false);
     };
 
     img.onerror = () => {
@@ -74,16 +87,6 @@ export default function App() {
       setResultMessage('Không thể tải bức ảnh này. Vui lòng thử tải lên ảnh khác.');
     };
   };
-
-  useEffect(() => {
-    if (canvasRef.current && loadedImageRef.current) {
-      renderSam3Visualization(canvasRef.current, loadedImageRef.current, detections, {
-        showMasks,
-        showBoxes,
-        showScores,
-      });
-    }
-  }, [showMasks, showBoxes, showScores, detections]);
 
   useEffect(() => {
     runDetection(selectedImageSrc, prompt, confThreshold);
@@ -274,42 +277,6 @@ export default function App() {
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   Kết quả phân đoạn & đếm
                 </h3>
-
-                {/* Các nút Bật/Tắt Lớp (Layers) */}
-                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setShowMasks(!showMasks)}
-                    className={`px-2 py-1 rounded flex items-center gap-1 font-medium transition cursor-pointer ${
-                      showMasks ? 'bg-white shadow-xs text-emerald-700' : 'text-slate-500'
-                    }`}
-                  >
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>Mặt nạ</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowBoxes(!showBoxes)}
-                    className={`px-2 py-1 rounded flex items-center gap-1 font-medium transition cursor-pointer ${
-                      showBoxes ? 'bg-white shadow-xs text-red-600' : 'text-slate-500'
-                    }`}
-                  >
-                    <Square className="w-3.5 h-3.5" />
-                    <span>Khung</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowScores(!showScores)}
-                    className={`px-2 py-1 rounded flex items-center gap-1 font-medium transition cursor-pointer ${
-                      showScores ? 'bg-white shadow-xs text-green-700' : 'text-slate-500'
-                    }`}
-                  >
-                    <Tag className="w-3.5 h-3.5" />
-                    <span>Điểm số</span>
-                  </button>
-                </div>
               </div>
 
               {/* Khung Canvas Viewport */}
