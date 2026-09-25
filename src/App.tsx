@@ -12,20 +12,18 @@ import {
   Sliders,
   Code2
 } from 'lucide-react';
-import { SAMPLE_IMAGES } from './data/sampleImages';
 import { DetectionItem, SampleImage } from './types';
 import { detectMushroomsInImage, renderSam3Visualization } from './utils/sam3Vision';
-import { CodeViewerModal } from './components/CodeViewerModal';
 
 export default function App() {
   const [prompt, setPrompt] = useState<string>('mushroom');
   const [confThreshold, setConfThreshold] = useState<number>(0.65);
-  const [selectedImageSrc, setSelectedImageSrc] = useState<string>(SAMPLE_IMAGES[0].url);
-  const [selectedSample, setSelectedSample] = useState<SampleImage | null>(SAMPLE_IMAGES[0]);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
+  const [selectedSample, setSelectedSample] = useState<SampleImage | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [resultMessage, setResultMessage] = useState<string>('🍄 SAM 3 đếm được: 5 cây nấm.');
-  const [detections, setDetections] = useState<DetectionItem[]>(SAMPLE_IMAGES[0].detections);
-  const [count, setCount] = useState<number>(5);
+  const [resultMessage, setResultMessage] = useState<string>('Vui lòng tải ảnh lên để bắt đầu phân tích.');
+  const [detections, setDetections] = useState<DetectionItem[]>([]);
+  const [count, setCount] = useState<number>(0);
   const [isCodeModalOpen, setIsCodeModalOpen] = useState<boolean>(false);
 
   // Layer display toggles
@@ -39,6 +37,7 @@ export default function App() {
 
   // Xử lý và render khi ảnh, prompt hoặc threshold thay đổi
   const runDetection = async (imgSrc: string, currentPrompt: string, threshold: number, sample?: SampleImage | null) => {
+    if (!imgSrc) return;
     setIsProcessing(true);
 
     const img = new Image();
@@ -152,19 +151,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setIsCodeModalOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition cursor-pointer"
-            >
-              <Code2 className="w-3.5 h-3.5" />
-              <span>Xem Code UI/UX</span>
-            </button>
-
-            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>Đếm tự động theo Concept Prompt</span>
-            </div>
+            {/* Removed CodeViewerModal button and Sparkles badge */}
           </div>
         </div>
       </header>
@@ -212,36 +199,7 @@ export default function App() {
                 <p className="text-xs text-slate-400 mt-1">PNG, JPG, WEBP dung lượng tối đa 20MB</p>
               </div>
 
-              {/* Bộ sưu tập mẫu nấm */}
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                  Hoặc chọn ảnh mẫu có sẵn để thử nghiệm:
-                </p>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {SAMPLE_IMAGES.map((sample) => {
-                    const isSelected = selectedSample?.id === sample.id;
-                    return (
-                      <button
-                        key={sample.id}
-                        type="button"
-                        onClick={() => handleSelectSample(sample)}
-                        className={`relative rounded-xl overflow-hidden border-2 text-left group transition-all cursor-pointer ${
-                          isSelected ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs' : 'border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        <img 
-                          src={sample.url} 
-                          alt={sample.name} 
-                          className="h-20 w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="p-1.5 bg-white/95 text-[11px] font-medium truncate text-slate-700">
-                          {sample.name}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              {/* Bộ sưu tập mẫu nấm đã bị xóa theo yêu cầu */}
 
               {/* Nhập Prompt */}
               <div className="space-y-1.5">
@@ -451,10 +409,6 @@ export default function App() {
         </div>
       </main>
 
-      <CodeViewerModal 
-        isOpen={isCodeModalOpen} 
-        onClose={() => setIsCodeModalOpen(false)} 
-      />
     </div>
   );
 }
