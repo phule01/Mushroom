@@ -7,11 +7,3 @@ export interface DetectionItem {
   label?: string;
 }
 
-export interface SampleImage {
-  id: string;
-  name: string;
-  description: string;
-  url: string;
-  defaultPrompt: string;
-  detections: DetectionItem[];
-}
