@@ -6,25 +6,21 @@ import {
   Layers, 
   Square, 
   Tag, 
-  Sparkles,
   Info,
   CheckCircle2,
-  Sliders,
-  Code2
+  Sliders
 } from 'lucide-react';
-import { DetectionItem, SampleImage } from './types';
+import { DetectionItem } from './types';
 import { detectMushroomsInImage, renderSam3Visualization } from './utils/sam3Vision';
 
 export default function App() {
   const [prompt, setPrompt] = useState<string>('mushroom');
   const [confThreshold, setConfThreshold] = useState<number>(0.65);
   const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
-  const [selectedSample, setSelectedSample] = useState<SampleImage | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [resultMessage, setResultMessage] = useState<string>('Vui lòng tải ảnh lên để bắt đầu phân tích.');
   const [detections, setDetections] = useState<DetectionItem[]>([]);
   const [count, setCount] = useState<number>(0);
-  const [isCodeModalOpen, setIsCodeModalOpen] = useState<boolean>(false);
 
   // Layer display toggles
   const [showMasks, setShowMasks] = useState<boolean>(true);
@@ -36,7 +32,7 @@ export default function App() {
   const loadedImageRef = useRef<HTMLImageElement | null>(null);
 
   // Xử lý và render khi ảnh, prompt hoặc threshold thay đổi
-  const runDetection = async (imgSrc: string, currentPrompt: string, threshold: number, sample?: SampleImage | null) => {
+  const runDetection = async (imgSrc: string, currentPrompt: string, threshold: number) => {
     if (!imgSrc) return;
     setIsProcessing(true);
 
@@ -49,12 +45,8 @@ export default function App() {
 
       let currentDetections: DetectionItem[] = [];
 
-      if (sample && sample.url === imgSrc && currentPrompt.toLowerCase() === sample.defaultPrompt.toLowerCase()) {
-        currentDetections = sample.detections.filter(d => d.score >= threshold);
-      } else {
-        const result = await detectMushroomsInImage(img, currentPrompt, threshold);
-        currentDetections = result.detections;
-      }
+      const result = await detectMushroomsInImage(img, currentPrompt, threshold);
+      currentDetections = result.detections;
 
       setDetections(currentDetections);
       const detectedCount = currentDetections.length;
@@ -94,7 +86,7 @@ export default function App() {
   }, [showMasks, showBoxes, showScores, detections]);
 
   useEffect(() => {
-    runDetection(selectedImageSrc, prompt, confThreshold, selectedSample);
+    runDetection(selectedImageSrc, prompt, confThreshold);
   }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,22 +96,14 @@ export default function App() {
       reader.onload = (event) => {
         const src = event.target?.result as string;
         setSelectedImageSrc(src);
-        setSelectedSample(null);
-        runDetection(src, prompt, confThreshold, null);
+        runDetection(src, prompt, confThreshold);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSelectSample = (sample: SampleImage) => {
-    setSelectedSample(sample);
-    setSelectedImageSrc(sample.url);
-    setPrompt(sample.defaultPrompt);
-    runDetection(sample.url, sample.defaultPrompt, confThreshold, sample);
-  };
-
   const handleCountClick = () => {
-    runDetection(selectedImageSrc, prompt, confThreshold, selectedSample);
+    runDetection(selectedImageSrc, prompt, confThreshold);
   };
 
   const handleDownload = () => {
@@ -239,7 +223,7 @@ export default function App() {
                   onChange={(e) => {
                     const val = parseFloat(e.target.value);
                     setConfThreshold(val);
-                    runDetection(selectedImageSrc, prompt, val, selectedSample);
+                    runDetection(selectedImageSrc, prompt, val);
                   }}
                   className="w-full accent-emerald-600 cursor-pointer"
                 />
