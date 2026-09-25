@@ -22,11 +22,7 @@ echo "NOTE: It may take 15-30 seconds for the model to load into RAM/VRAM."
 echo ""
 PORT=7860
 export PORT
-echo "--------------------------------------------------------"
-echo "[HOW TO USE]"
-echo "1. Wait for 'Uvicorn running on http://0.0.0.0:$PORT'"
-echo "2. On this computer, open your browser and go to: http://localhost:$PORT"
-echo "3. On other devices in your Wi-Fi/LAN, go to: http://[YOUR-LOCAL-IP]:$PORT"
+
 echo ""
 echo "[HOW TO STOP]"
 echo "To TURN OFF the model and free up RAM, press CTRL+C in this window."

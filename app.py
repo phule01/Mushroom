@@ -137,6 +137,26 @@ else:
     def read_root():
         return RedirectResponse(url="/api")
 
+import socket
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))
+    local_ip = get_local_ip()
+    
+    print("\n" + "="*60)
+    print(" [HOW TO USE]")
+    print(f" 1. On this computer, open your browser and go to: http://localhost:{port}")
+    print(f" 2. On other devices in your Wi-Fi/LAN, go to:      http://{local_ip}:{port}")
+    print("="*60 + "\n")
+    
     uvicorn.run(app, host="0.0.0.0", port=port)
