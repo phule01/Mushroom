@@ -23,7 +23,7 @@ except Exception as e:
 
 def process_image(image, prompt, conf_threshold):
     if image is None:
-        return None, "Vui lòng tải lên một bức ảnh."
+        return None, "Vui lòng tải lên một bức ảnh.", "{}"
     
     # Run SAM3
     with torch.autocast("cuda", dtype=torch.bfloat16):
@@ -32,7 +32,7 @@ def process_image(image, prompt, conf_threshold):
             processor=processor, 
             text_prompt=prompt, 
             conf_threshold=conf_threshold,
-            image_obj=image # We'll need to slightly modify count_mushrooms to accept image objects
+            image_obj=image
         )
     
     count = len(masks)
@@ -44,7 +44,19 @@ def process_image(image, prompt, conf_threshold):
         result_img = image
         message = f"Không tìm thấy nấm nào với ngưỡng Confidence {conf_threshold}."
         
-    return result_img, message
+    # Chuẩn bị dữ liệu JSON cho React Frontend
+    import json
+    detections = []
+    for i, (box, score) in enumerate(zip(boxes, scores)):
+        detections.append({
+            "id": i + 1,
+            "score": float(score),
+            "box": [float(x) for x in box],
+            "label": prompt
+        })
+    json_result = json.dumps({"detections": detections})
+        
+    return result_img, message, json_result
 
 # We need to monkey-patch sam3_count.count_mushrooms to support passing an image directly
 # so we don't have to save/load from disk in the web app
@@ -88,11 +100,13 @@ with gr.Blocks(title="SAM 3 Mushroom Counter", theme=gr.themes.Soft()) as demo:
         with gr.Column(scale=1):
             output_image = gr.Image(type="pil", label="Kết quả")
             result_text = gr.Textbox(label="Tổng kết", interactive=False)
+            json_output = gr.Textbox(label="JSON API Output (Dành cho Frontend)", interactive=False)
             
     submit_btn.click(
         fn=process_image,
         inputs=[input_image, prompt_input, conf_slider],
-        outputs=[output_image, result_text]
+        outputs=[output_image, result_text, json_output],
+        api_name="predict"
     )
     
 if __name__ == "__main__":
