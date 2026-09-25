@@ -13,8 +13,8 @@ runs/
 *.mp4
 .vscode/
 
-/sam3_repo/
-/app_sam3.py
 
-/requirements.txt
-/sam3_count.py
+
+
+
+
