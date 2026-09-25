@@ -23,6 +23,25 @@ echo ""
 PORT=7860
 export PORT
 
+echo "[2.5/3] Checking Python dependencies..."
+source "$(conda info --base)/etc/profile.d/conda.sh" 2>/dev/null
+conda activate sam3 2>/dev/null
+python -c "import gradio, torch, fastapi, uvicorn" >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "========================================================"
+    echo "[ERROR] Python dependencies not found!"
+    echo "It seems you haven't activated the 'sam3' Conda environment,"
+    echo "or you haven't installed the requirements yet."
+    echo ""
+    echo "Please open your terminal and run:"
+    echo "1. conda activate sam3"
+    echo "2. pip install -r requirements.txt"
+    echo "3. Run this script again."
+    echo "========================================================"
+    exit 1
+fi
+
 echo ""
 echo "[HOW TO STOP]"
 echo "To TURN OFF the model and free up RAM, press CTRL+C in this window."
