@@ -22,7 +22,7 @@ import { Client } from "@gradio/client";
 export async function detectMushroomsInImage(img: HTMLImageElement, prompt: string, threshold: number): Promise<{detections: DetectionItem[], outputImageUrl?: string}> {
   try {
     // Kết nối tới server Gradio API (được mount tại /api/)
-    const client = await Client.connect("http://127.0.0.1:7860/api/");
+    const client = await Client.connect(window.location.origin + "/api/");
     
     const canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth || img.width;
