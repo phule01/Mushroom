@@ -17,41 +17,18 @@ export const SAM3_BORDER_COLORS = [
   '#00ffff', '#ff00ff', '#80ff00', '#0080ff', '#ff8000'
 ];
 
-import { Client } from "@gradio/client";
-
-export async function detectMushroomsInImage(img: HTMLImageElement, prompt: string, threshold: number): Promise<{detections: DetectionItem[]}> {
-  try {
-    const client = await Client.connect("Zu4Bit/CountMushroom");
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth || img.width;
-    canvas.height = img.naturalHeight || img.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error("Canvas context failed");
-    ctx.drawImage(img, 0, 0);
-    
-    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg'));
-    if (!blob) throw new Error("Image conversion failed");
-
-    // Gọi API tới Hugging Face Space (kết quả trả về mảng 3 items: [image, message, jsonStr])
-    const result = await client.predict("/predict", { 
-        image: blob, 
-        prompt: prompt, 
-        conf_threshold: threshold 
-    });
-    
-    const resultData = result.data as any[];
-    if (resultData && resultData.length >= 3) {
-      const jsonStr = resultData[2];
-      const parsed = JSON.parse(jsonStr);
-      return parsed;
-    }
-    
-    return { detections: [] };
-  } catch (error) {
-    console.error("Gradio API error:", error);
-    return { detections: [] };
-  }
+export async function detectMushroomsInImage(_img: HTMLImageElement, prompt: string, threshold: number): Promise<{detections: DetectionItem[]}> {
+  // Vì đã gỡ bỏ Hugging Face backend, hệ thống tạm thời trả về mock data để tránh lỗi UI
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        detections: [
+          { id: 1, score: 0.95, box: [50, 50, 150, 150], label: prompt },
+          { id: 2, score: 0.88, box: [200, 100, 280, 220], label: prompt }
+        ].filter(d => d.score >= threshold) as DetectionItem[]
+      });
+    }, 1000);
+  });
 }
 
 export function renderSam3Visualization(

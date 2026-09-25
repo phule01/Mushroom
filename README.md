@@ -1,14 +1,3 @@
----
-title: CountMushroom
-emoji: 🍄
-colorFrom: green
-colorTo: blue
-sdk: gradio
-sdk_version: 4.40.0
-app_file: app.py
-pinned: false
----
-
 # 🍄 SAM 3 Mushroom Counter
 Ứng dụng đếm nấm tự động bằng công nghệ Segment Anything 3 (SAM 3) Zero-shot của Meta.
 
