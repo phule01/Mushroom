@@ -24,7 +24,8 @@ echo.
 echo --------------------------------------------------------
 echo [HOW TO USE]
 echo 1. Wait for "Uvicorn running on http://0.0.0.0:7860"
-echo 2. Open your web browser and go to: http://localhost:7860
+echo 2. On this computer, open your browser and go to: http://localhost:7860
+echo 3. On other devices in your Wi-Fi/LAN, go to: http://[YOUR-LOCAL-IP]:7860
 echo.
 echo [HOW TO STOP]
 echo To TURN OFF the model and free up RAM, press CTRL+C in this window.
