@@ -24,8 +24,11 @@ echo.
 set PORT=7860
 
 echo [2.5/3] Checking Python dependencies...
-call conda activate sam3 >nul 2>&1
-python -c "import gradio, torch, fastapi, uvicorn" >nul 2>&1
+set PYTHON_CMD=python
+if exist "%USERPROFILE%\Miniconda3\envs\sam3\python.exe" set PYTHON_CMD="%USERPROFILE%\Miniconda3\envs\sam3\python.exe"
+if exist "%USERPROFILE%\anaconda3\envs\sam3\python.exe" set PYTHON_CMD="%USERPROFILE%\anaconda3\envs\sam3\python.exe"
+
+%PYTHON_CMD% -c "import gradio, torch, fastapi, uvicorn" >nul 2>&1
 if %errorlevel% neq 0 (
     echo.
     echo ========================================================
@@ -47,6 +50,6 @@ echo [HOW TO STOP]
 echo To TURN OFF the model and free up RAM, press CTRL+C in this window.
 echo --------------------------------------------------------
 echo.
-python app.py
+%PYTHON_CMD% app.py
 
 pause
